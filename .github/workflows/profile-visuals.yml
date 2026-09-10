@@ -1,0 +1,46 @@
+name: Update profile visuals
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/profile-visuals.yml
+  schedule:
+    - cron: '23 20 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-visuals
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Generate contribution snake
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: xiaozhaoben
+          outputs: |
+            profile-snake-contrib/github-snake.svg?color_snake=#7c3aed
+            profile-snake-contrib/github-snake-dark.svg?palette=github-dark&color_snake=#22d3ee
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate contribution city
+        uses: yoshi389111/github-profile-3d-contrib@0.7.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: xiaozhaoben
+      - name: Save generated visuals
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- profile-snake-contrib profile-3d-contrib
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: 更新主页贡献动画与三维贡献图"
+            git push
+          fi
